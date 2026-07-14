@@ -102,15 +102,13 @@ function App({ onOpenDestiny }: AppProps) {
     const nextLayout = ['Asymmetric Swiss grid', 'Centered monument', 'Broken modular grid', 'Editorial collage'][Math.floor(Math.random() * 4)]; 
     const nextTexture = ['offset-print grain', 'photocopy noise', 'risograph misregistration', 'screenprint ink bleed'][Math.floor(Math.random() * 4)]; 
     const nextMaterials = [['Matte paper', 'Chrome'], ['Smoked glass', 'Aluminum'], ['Concrete', 'Foil'], ['Polymer', 'Matte paper']][Math.floor(Math.random() * 4)]; 
-    const nextRatio = aspectRatios[Math.floor(Math.random() * aspectRatios.length)].label;
     
     setStyle(nextStyle); 
     setPalette(nextPalette); 
     setLayout(nextLayout); 
     setTexture(nextTexture); 
     setMaterials(nextMaterials); 
-    setRatio(nextRatio);
-    setPrompt(promptFor(subject, nextStyle, text, nextPalette, nextMaterials, nextTexture, nextLayout, nextRatio)); 
+    setPrompt(promptFor(subject, nextStyle, text, nextPalette, nextMaterials, nextTexture, nextLayout, ratio)); 
     flash('Direction randomized')
   }
   

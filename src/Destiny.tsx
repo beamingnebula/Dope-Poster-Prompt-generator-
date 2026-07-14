@@ -18,7 +18,7 @@ export default function Destiny({ onBack }: Props) {
   const [subject, setSubject] = useState(''); const [style, setStyle] = useState(0); const [format, setFormat] = useState(formats[0]); const [ratio, setRatio] = useState(ratios[0]); const [copy, setCopy] = useState(['', '', '', '', '', '']); const [prompt, setPrompt] = useState(''); const [history, setHistory] = useState<string[]>([]); const [notice, setNotice] = useState('')
   const flash = (message: string) => { setNotice(message); window.setTimeout(() => setNotice(''), 1600) }
   const makePrompt = (random = false, suppliedSubject?: string, suppliedCopy?: string[]) => {
-    const choice = random ? Math.floor(Math.random() * styles.length) : style; const selected = styles[choice]; const actualSubject = suppliedSubject || subject.trim() || pick(fallback); const actualFormat = random || format === 'Surprise me' ? pick(formats.slice(1)) : format; const actualRatio = random || ratio === 'Surprise me' ? pick(ratios.slice(1)) : ratio; const words = suppliedCopy || copy
+    const choice = random ? Math.floor(Math.random() * styles.length) : style; const selected = styles[choice]; const actualSubject = suppliedSubject || subject.trim() || pick(fallback); const actualFormat = random || format === 'Surprise me' ? pick(formats.slice(1)) : format; const actualRatio = ratio === 'Surprise me' ? pick(ratios.slice(1)) : ratio; const words = suppliedCopy || copy
     
     // Restore and merge structural headline features
     const headline = words[0]?.trim();

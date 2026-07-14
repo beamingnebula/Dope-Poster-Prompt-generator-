@@ -1,12 +1,12 @@
 import React, { ChangeEvent, DragEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Archive, ArrowDownToLine, ArrowUpFromLine, Copy, Download, FolderPlus, Heart, ImagePlus, Menu, MoreHorizontal, Plus, Search, Shuffle, Sparkles, Trash2, Upload, X } from 'lucide-react'
+import { Archive, ArrowDownToLine, ArrowUpFromLine, Copy, FolderPlus, Heart, ImagePlus, Menu, Plus, Search, Sparkles, Trash2, Upload, X } from 'lucide-react'
 import Destiny from './Destiny'
 import './styles.css'
 
 type ImageAsset = { id: string; name: string; dataUrl: string }
 type Version = { id: string; prompt: string; createdAt: string }
-type PromptItem = { id: string; title: string; subject: string; style: string; prompt: string; collection: string; favorite: boolean; createdAt: string; updatedAt: string; tags: string[]; notes: string; images: ImageAsset[]; versions: Version[] }
+type PromptItem = { id: string; title: string; subject: string; style: string; prompt: string; collection: string; favorite: boolean; createdAt: string; updatedAt: string; tags: string[]; notes: string; images: ImageAsset[]; versions: Version[]; ratio?: string }
 type Store = { prompts: PromptItem[]; collections: string[] }
 
 const initialPrompt = `A vertical editorial poster for [SUBJECT], designed as a premium industrial print artifact. Build the composition on an asymmetric Swiss grid: a single monumental hero form offset against generous bone-white negative space, with cropped condensed typography and precise utility labels.
@@ -18,16 +18,45 @@ Mood: restrained underground luxury, quiet technical confidence, contemporary de
 const styles = ['Swiss Editorial', 'Neo Brutalism', 'Chrome Future', 'Risograph', 'Photocopy', 'Japanese Magazine', 'Luxury Minimal', 'Experimental Type', 'Organic Tech', 'Architecture']
 const palettes = ['Graphite / Bone / Lime', 'Black / Cream / Signal Red', 'Ink / Silver / Cyan', 'Charcoal / Ivory / Tangerine']
 
+const aspectRatios = [
+  { label: '2:1', w: 22, h: 11 },
+  { label: '16:9', w: 22, h: 12.4 },
+  { label: '3:2', w: 22, h: 14.6 },
+  { label: '14:10', w: 22, h: 15.7 },
+  { label: '4:3', w: 22, h: 16.5 },
+  { label: '5:4', w: 22, h: 17.6 },
+  { label: '1:1', w: 18, h: 18 },
+  { label: '4:5', w: 17.6, h: 22 },
+  { label: '3:4', w: 16.5, h: 22 },
+  { label: '10:14', w: 15.7, h: 22 },
+  { label: '2:3', w: 14.6, h: 22 },
+  { label: '6:10', w: 13.2, h: 22 },
+  { label: '9:16', w: 12.4, h: 22 },
+  { label: '1:2', w: 11, h: 22 }
+]
+
 const uid = () => crypto.randomUUID()
 const today = () => new Date().toISOString()
 function readStore(): Store { try { const raw = localStorage.getItem('prompt-studio/v1'); return raw ? JSON.parse(raw) : { prompts: [], collections: ['All work', 'Editorial', 'Experiments', 'Posters'] } } catch { return { prompts: [], collections: ['All work'] } } }
-function promptFor(subject: string, style: string, text: string[], palette: string, materials: string[], texture: string, layout: string) {
+
+function promptFor(subject: string, style: string, text: string[], palette: string, materials: string[], texture: string, layout: string, ratio: string) {
   const copy = text.filter(Boolean).map((t, i) => `Text ${i + 1}: “${t}”`).join('; ') || 'Use invented editorial microcopy only.'
   const materialLine = materials.length ? materials.join(', ').toLowerCase() : 'matte paper, anodized aluminum and smoked glass'
-  return `A vertical ${style.toLowerCase()} poster for ${subject || 'an unnamed visual concept'}, built as a highly art-directed print artifact. ${layout} composition, a single decisive focal point, intentional asymmetry, large controlled negative space and a strict invisible grid.\n\nMaterial language: ${materialLine}. Palette: ${palette}, with disciplined color restraint and one active accent only. Add ${texture.toLowerCase()}, tactile paper fibers, subtle print registration shifts and quiet technical diagram details; imperfections must look physically produced.\n\nTypography is an object in the composition, not an overlay: oversized condensed sans-serif letterforms, precise metadata, cropped type, barcode-like marks and calibrated hierarchy. ${copy}\n\nLighting: precise product-photography contrast, deep graphite shadows, soft directional highlights. Mood: museum-grade underground culture, industrial poetry, deliberate and intelligent. Avoid generic AI aesthetics, random decoration, illegible walls of text, gradients, stock imagery and visual clutter. 4:5 vertical format, premium editorial graphic design.`
+  const isVertical = ratio.split(':').map(Number)[0] < ratio.split(':').map(Number)[1]
+  const orientation = ratio === '1:1' ? 'square' : (isVertical ? 'vertical' : 'horizontal')
+  
+  const subjectPhrase = subject.trim() 
+    ? `The primary subject is ${subject.trim()}: make it the monumental hero form of the composition, physically real, tactile, sharply lit, and carefully isolated, ensuring it is central to the visual narrative and unmistakably visible.` 
+    : `The composition is designed for an unnamed visual concept.`
+
+  return `A ${orientation} ${style.toLowerCase()} poster in a ${ratio} aspect ratio, built as a highly art-directed print artifact. ${subjectPhrase} Build this on a ${layout.toLowerCase()} layout, with a single decisive focal point, intentional asymmetry, large controlled negative space and a strict invisible grid.\n\nMaterial language: ${materialLine}. Palette: ${palette}, with disciplined color restraint and one active accent only. Add ${texture.toLowerCase()}, tactile paper fibers, subtle print registration shifts and quiet technical diagram details; imperfections must look physically produced.\n\nTypography is an object in the composition, not an overlay: oversized condensed sans-serif letterforms, precise metadata, cropped type, barcode-like marks and calibrated hierarchy. ${copy}\n\nLighting: precise product-photography contrast, deep graphite shadows, soft directional highlights. Mood: museum-grade underground culture, industrial poetry, deliberate and intelligent. Avoid generic AI aesthetics, random decoration, illegible walls of text, gradients, stock imagery and visual clutter. ${ratio} ${orientation} format, premium editorial graphic design.`
 }
 
-function App() {
+type AppProps = {
+  onOpenDestiny: () => void
+}
+
+function App({ onOpenDestiny }: AppProps) {
   const [store, setStore] = useState<Store>(readStore)
   const [active, setActive] = useState<string | null>(null)
   const [query, setQuery] = useState('')
@@ -41,35 +70,179 @@ function App() {
   const [texture, setTexture] = useState('offset-print grain')
   const [materials, setMaterials] = useState<string[]>(['Matte paper', 'Chrome'])
   const [text, setText] = useState(['', '', '', '', '', ''])
+  const [ratio, setRatio] = useState('4:5')
   const [prompt, setPrompt] = useState(initialPrompt)
   const [notes, setNotes] = useState('')
   const [images, setImages] = useState<ImageAsset[]>([])
   const [collection, setCollection] = useState('Editorial')
-  const [notice, setNotice] = useState('')
+  const [toast, setToast] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => localStorage.setItem('prompt-studio/v1', JSON.stringify(store)), [store])
-  useEffect(() => {
-    const actions = document.querySelector('.top-actions')
-    const row = document.querySelector('.process-row')
-    if (actions && !document.getElementById('open-destiny')) { const link = document.createElement('a'); link.id = 'open-destiny'; link.className = 'destiny-link'; link.href = '#destiny'; link.textContent = 'OPEN DESTINY'; link.onclick = () => window.setTimeout(() => window.location.reload(), 0); actions.prepend(link) }
-    if (row && !document.getElementById('studio-randomize')) { const button = document.createElement('button'); button.id = 'studio-randomize'; button.className = 'randomize'; button.innerHTML = '↻&nbsp; RANDOMIZE'; button.onclick = randomize; row.insertBefore(button, row.lastElementChild) }
-    if (!document.getElementById('studio-toast')) { const toast = document.createElement('div'); toast.id = 'studio-toast'; toast.className = 'lime-toast'; document.body.append(toast) }
-  }, [])
+  
   const items = useMemo(() => store.prompts.filter(p => (filter === 'All work' || filter === 'Favorites' ? filter !== 'Favorites' || p.favorite : p.collection === filter) && `${p.title} ${p.subject} ${p.tags.join(' ')}`.toLowerCase().includes(query.toLowerCase())).sort((a,b) => Number(b.favorite)-Number(a.favorite) || b.updatedAt.localeCompare(a.updatedAt)), [store, filter, query])
   const current = store.prompts.find(p => p.id === active)
 
-  function reset() { setActive(null); setTitle('Untitled composition'); setSubject(''); setStyle(styles[0]); setPalette(palettes[0]); setLayout('Asymmetric Swiss grid'); setTexture('offset-print grain'); setMaterials(['Matte paper', 'Chrome']); setText(['','','','','','']); setPrompt(initialPrompt); setNotes(''); setImages([]) }
-  function generate() { setPrompt(promptFor(subject, style, text, palette, materials, texture, layout)) }
-  function randomize() { const nextStyle = styles[Math.floor(Math.random() * styles.length)]; const nextPalette = palettes[Math.floor(Math.random() * palettes.length)]; const nextLayout = ['Asymmetric Swiss grid', 'Centered monument', 'Broken modular grid', 'Editorial collage'][Math.floor(Math.random() * 4)]; const nextTexture = ['offset-print grain', 'photocopy noise', 'risograph misregistration', 'screenprint ink bleed'][Math.floor(Math.random() * 4)]; const nextMaterials = [['Matte paper', 'Chrome'], ['Smoked glass', 'Aluminum'], ['Concrete', 'Foil'], ['Polymer', 'Matte paper']][Math.floor(Math.random() * 4)]; setStyle(nextStyle); setPalette(nextPalette); setLayout(nextLayout); setTexture(nextTexture); setMaterials(nextMaterials); setPrompt(promptFor(subject, nextStyle, text, nextPalette, nextMaterials, nextTexture, nextLayout)); const toast = document.getElementById('studio-toast'); if (toast) { toast.textContent = 'Direction randomized'; toast.classList.add('show'); window.setTimeout(() => toast.classList.remove('show'), 1600) } }
-  function save() { const now = today(); const item: PromptItem = { id: active || uid(), title: title || subject || 'Untitled composition', subject, style, prompt, collection, favorite: current?.favorite || false, createdAt: current?.createdAt || now, updatedAt: now, tags: [style, subject || 'concept', ...materials.slice(0,2)], notes, images, versions: [...(current?.versions || []), { id: uid(), prompt, createdAt: now }] }; setStore(s => ({ ...s, prompts: s.prompts.some(p => p.id === item.id) ? s.prompts.map(p => p.id === item.id ? item : p) : [item, ...s.prompts] })); setActive(item.id) }
-  function load(item: PromptItem) { setActive(item.id); setTitle(item.title); setSubject(item.subject); setStyle(item.style); setPrompt(item.prompt); setCollection(item.collection); setNotes(item.notes); setImages(item.images); setText(['','','','','','']); setMobileOpen(false) }
+  const flash = (msg: string) => {
+    setToast(msg)
+    window.setTimeout(() => setToast(''), 1600)
+  }
+
+  function reset() { 
+    setActive(null); setTitle('Untitled composition'); setSubject(''); setStyle(styles[0]); setPalette(palettes[0]); setLayout('Asymmetric Swiss grid'); setTexture('offset-print grain'); setMaterials(['Matte paper', 'Chrome']); setText(['','','','','','']); setRatio('4:5'); setPrompt(initialPrompt); setNotes(''); setImages([]) 
+  }
+  
+  function generate() { 
+    setPrompt(promptFor(subject, style, text, palette, materials, texture, layout, ratio)) 
+  }
+  
+  function randomize() { 
+    const nextStyle = styles[Math.floor(Math.random() * styles.length)]; 
+    const nextPalette = palettes[Math.floor(Math.random() * palettes.length)]; 
+    const nextLayout = ['Asymmetric Swiss grid', 'Centered monument', 'Broken modular grid', 'Editorial collage'][Math.floor(Math.random() * 4)]; 
+    const nextTexture = ['offset-print grain', 'photocopy noise', 'risograph misregistration', 'screenprint ink bleed'][Math.floor(Math.random() * 4)]; 
+    const nextMaterials = [['Matte paper', 'Chrome'], ['Smoked glass', 'Aluminum'], ['Concrete', 'Foil'], ['Polymer', 'Matte paper']][Math.floor(Math.random() * 4)]; 
+    const nextRatio = aspectRatios[Math.floor(Math.random() * aspectRatios.length)].label;
+    
+    setStyle(nextStyle); 
+    setPalette(nextPalette); 
+    setLayout(nextLayout); 
+    setTexture(nextTexture); 
+    setMaterials(nextMaterials); 
+    setRatio(nextRatio);
+    setPrompt(promptFor(subject, nextStyle, text, nextPalette, nextMaterials, nextTexture, nextLayout, nextRatio)); 
+    flash('Direction randomized')
+  }
+  
+  function save() { 
+    const now = today(); 
+    const item: PromptItem = { 
+      id: active || uid(), 
+      title: title || subject || 'Untitled composition', 
+      subject, 
+      style, 
+      prompt, 
+      collection, 
+      favorite: current?.favorite || false, 
+      createdAt: current?.createdAt || now, 
+      updatedAt: now, 
+      tags: [style, subject || 'concept', ...materials.slice(0,2)], 
+      notes, 
+      images, 
+      ratio,
+      versions: [...(current?.versions || []), { id: uid(), prompt, createdAt: now }] 
+    }; 
+    setStore(s => ({ ...s, prompts: s.prompts.some(p => p.id === item.id) ? s.prompts.map(p => p.id === item.id ? item : p) : [item, ...s.prompts] })); 
+    setActive(item.id) 
+  }
+  
+  function load(item: PromptItem) { 
+    setActive(item.id); setTitle(item.title); setSubject(item.subject); setStyle(item.style); setPrompt(item.prompt); setCollection(item.collection); setNotes(item.notes); setImages(item.images); setRatio(item.ratio || '4:5'); setText(['','','','','','']); setMobileOpen(false) 
+  }
+  
   function toggleFavorite(id: string) { setStore(s => ({...s, prompts: s.prompts.map(p => p.id === id ? {...p, favorite: !p.favorite, updatedAt: today()} : p)})) }
   function remove(id: string) { if (confirm('Delete this saved prompt?')) { setStore(s => ({...s, prompts: s.prompts.filter(p => p.id !== id)})); if(active === id) reset() } }
   function files(e: ChangeEvent<HTMLInputElement> | DragEvent<HTMLDivElement>) { const list = 'dataTransfer' in e ? e.dataTransfer.files : e.target.files; if (!list) return; Array.from(list).filter(f => f.type.startsWith('image/')).slice(0, 8 - images.length).forEach(file => { const reader = new FileReader(); reader.onload = () => setImages(prev => [...prev, { id: uid(), name: file.name, dataUrl: String(reader.result) }]); reader.readAsDataURL(file) }) }
   function exportJSON() { const blob = new Blob([JSON.stringify(store, null, 2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'prompt-studio-library.json'; a.click(); URL.revokeObjectURL(a.href) }
   function importJSON(e: ChangeEvent<HTMLInputElement>) { const file = e.target.files?.[0]; if(!file) return; const reader = new FileReader(); reader.onload = () => { try { const data = JSON.parse(String(reader.result)) as Store; if(Array.isArray(data.prompts)) setStore({ prompts: data.prompts, collections: Array.isArray(data.collections) ? data.collections : ['All work'] }) } catch { alert('This is not a valid Prompt Studio export.') } }; reader.readAsText(file) }
   function addCollection() { const name = window.prompt('Name the new collection'); if(name?.trim() && !store.collections.includes(name.trim())) setStore(s => ({...s, collections:[...s.collections, name.trim()]})) }
+  
   const sidebar = <aside className={`sidebar ${mobileOpen ? 'open' : ''}`}><div className="brand"><span className="brand-mark">PS</span><span>PROMPT<br/>STUDIO</span><button className="mobile-close" onClick={()=>setMobileOpen(false)}><X size={18}/></button></div><button className="new-button" onClick={reset}><Plus size={17}/> NEW COMPOSITION</button><div className="side-section"><p>LIBRARY</p><button className={filter==='All work'?'selected':''} onClick={()=>setFilter('All work')}><Archive size={15}/> ALL WORK <i>{store.prompts.length}</i></button><button className={filter==='Favorites'?'selected':''} onClick={()=>setFilter('Favorites')}><Heart size={15}/> FAVORITES <i>{store.prompts.filter(p=>p.favorite).length}</i></button></div><div className="side-section collections"><div><p>COLLECTIONS</p><button onClick={addCollection} title="New collection"><FolderPlus size={15}/></button></div>{store.collections.filter(c=>c!=='All work').map(c=><button key={c} className={filter===c?'selected':''} onClick={()=>setFilter(c)}><span className="dot"/> {c}<i>{store.prompts.filter(p=>p.collection===c).length}</i></button>)}</div><div className="sidebar-bottom"><button onClick={exportJSON}><ArrowDownToLine size={15}/> EXPORT LIBRARY</button><label><ArrowUpFromLine size={15}/> IMPORT LIBRARY<input type="file" accept="application/json" onChange={importJSON}/></label><small>LOCAL-FIRST ARCHIVE<br/>YOUR WORK STAYS HERE</small></div></aside>
-  return <main><header><button className="hamburger" onClick={()=>setMobileOpen(true)}><Menu/></button><div className="crumb">PROMPT STUDIO <span>/</span> {active ? 'EDITING ARCHIVE' : 'NEW COMPOSITION'}</div><div className="top-actions"><button onClick={()=>navigator.clipboard.writeText(prompt)}><Copy size={15}/> COPY</button><button className="lime" onClick={save}><Archive size={15}/> SAVE TO LIBRARY</button></div></header>{sidebar}<section className="workspace"><div className="generator"><div className="section-title"><span>01 / COMPOSITION</span><small>DESIGN BRIEF</small></div><div className="field-grid"><label className="full"><span>PROJECT TITLE</span><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Name this visual direction"/></label><label><span>PRIMARY SUBJECT</span><input value={subject} onChange={e=>setSubject(e.target.value)} placeholder="e.g. glass orchid"/></label><label><span>STYLE FAMILY</span><select value={style} onChange={e=>setStyle(e.target.value)}>{styles.map(s=><option key={s}>{s}</option>)}</select></label><label><span>COLOR SYSTEM</span><select value={palette} onChange={e=>setPalette(e.target.value)}>{palettes.map(p=><option key={p}>{p}</option>)}</select></label><label><span>LAYOUT</span><select value={layout} onChange={e=>setLayout(e.target.value)}><option>Asymmetric Swiss grid</option><option>Centered monument</option><option>Broken modular grid</option><option>Editorial collage</option></select></label></div><div className="section-title compact"><span>02 / TYPE SYSTEM</span><small>OPTIONAL COPY</small></div><div className="text-inputs">{text.map((v,i)=><label key={i}><span>TEXT {String(i+1).padStart(2,'0')}</span><input value={v} onChange={e=>setText(t=>t.map((x,n)=>n===i?e.target.value:x))} placeholder={i===0?'Main heading':'Editorial detail'}/></label>)}</div><div className="section-title compact"><span>03 / MATERIAL + PROCESS</span><small>PHYSICALITY</small></div><div className="chips">{['Matte paper','Chrome','Smoked glass','Aluminum','Foil','Concrete','Polymer'].map(m=><button key={m} className={materials.includes(m)?'on':''} onClick={()=>setMaterials(a=>a.includes(m)?a.filter(x=>x!==m):[...a,m])}>{m}</button>)}</div><div className="process-row"><label><span>TEXTURE</span><input value={texture} onChange={e=>setTexture(e.target.value)}/></label><button className="generate" onClick={generate}><Sparkles size={16}/> GENERATE PROMPT</button></div></div><div className="output"><div className="section-title"><span>04 / GENERATED PROMPT</span><small>{prompt.length} CHARACTERS</small></div><textarea value={prompt} onChange={e=>setPrompt(e.target.value)} spellCheck="false"/><div className="reference-zone" onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();files(e)}}><div className="reference-heading"><span>REFERENCE IMAGES <b>{images.length}/8</b></span><button onClick={()=>inputRef.current?.click()}><ImagePlus size={15}/> ATTACH IMAGE</button><input ref={inputRef} type="file" accept="image/*" multiple onChange={files}/></div>{images.length ? <div className="image-strip">{images.map(image=><figure key={image.id}><img src={image.dataUrl} alt={image.name}/><button onClick={()=>setImages(a=>a.filter(x=>x.id!==image.id))}><X size={13}/></button></figure>)}</div> : <button className="drop-empty" onClick={()=>inputRef.current?.click()}><Upload size={18}/><span>DROP IMAGES HERE OR BROWSE<br/><small>Attach generated outputs or visual references</small></span></button>}</div><label className="notes"><span>ARCHIVE NOTES</span><textarea value={notes} onChange={e=>setNotes(e.target.value)} placeholder="What worked? Which model, ratio or variation should you try next?"/></label></div></section><aside className="library"><div className="library-head"><div><span>ARCHIVE</span><h2>{filter}</h2></div><div className="search"><Search size={15}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search"/></div></div><div className="archive-list">{items.length ? items.map(item=><article className={active===item.id?'active':''} key={item.id} onClick={()=>load(item)}>{item.images[0] ? <img src={item.images[0].dataUrl} alt=""/> : <div className="placeholder-art"><span>{item.title.slice(0,2).toUpperCase()}</span></div>}<div className="card-copy"><div><h3>{item.title}</h3><button onClick={e=>{e.stopPropagation();toggleFavorite(item.id)}}><Heart size={14} fill={item.favorite?'currentColor':'none'}/></button></div><p>{item.style} · {new Date(item.updatedAt).toLocaleDateString()}</p><div className="tags">{item.tags.slice(0,2).map(t=><em key={t}>{t}</em>)}</div></div><button className="delete" onClick={e=>{e.stopPropagation();remove(item.id)}}><Trash2 size={14}/></button></article>) : <div className="empty"><Archive size={24}/><p>No saved prompts yet.</p><small>Build a direction, then archive it here.</small></div>}</div></aside></main>
+  
+  return <main>
+    <header>
+      <button className="hamburger" onClick={()=>setMobileOpen(true)}><Menu/></button>
+      <div className="crumb">PROMPT STUDIO <span>/</span> {active ? 'EDITING ARCHIVE' : 'NEW COMPOSITION'}</div>
+      <div className="top-actions">
+        <button id="open-destiny" className="destiny-link lime" onClick={onOpenDestiny}>OPEN DESTINY</button>
+        <button onClick={() => { navigator.clipboard.writeText(prompt); flash('Copied to clipboard') }}><Copy size={15}/> COPY</button>
+        <button className="lime" onClick={save}><Archive size={15}/> SAVE TO LIBRARY</button>
+      </div>
+    </header>
+    {sidebar}
+    <section className="workspace">
+      <div className="generator">
+        <div className="section-title"><span>01 / COMPOSITION</span><small>DESIGN BRIEF</small></div>
+        <div className="field-grid">
+          <label className="full"><span>PROJECT TITLE</span><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Name this visual direction"/></label>
+          <label><span>PRIMARY SUBJECT</span><input value={subject} onChange={e=>setSubject(e.target.value)} placeholder="e.g. glass orchid"/></label>
+          <label><span>STYLE FAMILY</span><select value={style} onChange={e=>setStyle(e.target.value)}>{styles.map(s=><option key={s}>{s}</option>)}</select></label>
+          <label><span>COLOR SYSTEM</span><select value={palette} onChange={e=>setPalette(e.target.value)}>{palettes.map(p=><option key={p}>{p}</option>)}</select></label>
+          <label><span>LAYOUT</span><select value={layout} onChange={e=>setLayout(e.target.value)}><option>Asymmetric Swiss grid</option><option>Centered monument</option><option>Broken modular grid</option><option>Editorial collage</option></select></label>
+          
+          <div className="ratio-picker-container">
+            <span className="ratio-picker-title">ASPECT RATIO</span>
+            <div className="ratio-grid">
+              {aspectRatios.map(item => (
+                <button 
+                  key={item.label}
+                  type="button" 
+                  className={`ratio-btn ${ratio === item.label ? 'selected' : ''}`}
+                  onClick={() => setRatio(item.label)}
+                >
+                  <div className="ratio-icon-wrap">
+                    <div 
+                      className="ratio-icon" 
+                      style={{ width: `${item.w}px`, height: `${item.h}px` }}
+                    />
+                  </div>
+                  <span className="ratio-label">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        
+        <div className="section-title compact"><span>02 / TYPE SYSTEM</span><small>OPTIONAL COPY</small></div>
+        <div className="text-inputs">{text.map((v,i)=><label key={i}><span>TEXT {String(i+1).padStart(2,'0')}</span><input value={v} onChange={e=>setText(t=>t.map((x,n)=>n===i?e.target.value:x))} placeholder={i===0?'Main heading':'Editorial detail'}/></label>)}</div>
+        
+        <div className="section-title compact"><span>03 / MATERIAL + PROCESS</span><small>PHYSICALITY</small></div>
+        <div className="chips">{['Matte paper','Chrome','Smoked glass','Aluminum','Foil','Concrete','Polymer'].map(m=><button key={m} className={materials.includes(m)?'on':''} onClick={()=>setMaterials(a=>a.includes(m)?a.filter(x=>x!==m):[...a,m])}>{m}</button>)}</div>
+        
+        <div className="process-row">
+          <label><span>TEXTURE</span><input value={texture} onChange={e=>setTexture(e.target.value)}/></label>
+          <button id="studio-randomize" className="randomize" onClick={randomize}>↻&nbsp; RANDOMIZE</button>
+          <button className="generate" onClick={generate}><Sparkles size={16}/> GENERATE PROMPT</button>
+        </div>
+      </div>
+      
+      <div className="output">
+        <div className="section-title"><span>04 / GENERATED PROMPT</span><small>{prompt.length} CHARACTERS</small></div>
+        <textarea value={prompt} onChange={e=>setPrompt(e.target.value)} spellCheck="false"/>
+        
+        <div className="reference-zone" onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();files(e)}}>
+          <div className="reference-heading"><span>REFERENCE IMAGES <b>{images.length}/8</b></span><button onClick={()=>inputRef.current?.click()}><ImagePlus size={15}/> ATTACH IMAGE</button><input ref={inputRef} type="file" accept="image/*" multiple onChange={files}/></div>
+          {images.length ? <div className="image-strip">{images.map(image=><figure key={image.id}><img src={image.dataUrl} alt={image.name}/><button onClick={()=>setImages(a=>a.filter(x=>x.id!==image.id))}><X size={13}/></button></figure>)}</div> : <button className="drop-empty" onClick={()=>inputRef.current?.click()}><Upload size={18}/><span>DROP IMAGES HERE OR BROWSE<br/><small>Attach generated outputs or visual references</small></span></button>}
+        </div>
+        
+        <label className="notes"><span>ARCHIVE NOTES</span><textarea value={notes} onChange={e=>setNotes(e.target.value)} placeholder="What worked? Which model, ratio or variation should you try next?"/></label>
+      </div>
+    </section>
+    
+    <aside className="library">
+      <div className="library-head"><div><span>ARCHIVE</span><h2>{filter}</h2></div><div className="search"><Search size={15}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search"/></div></div>
+      <div className="archive-list">{items.length ? items.map(item=><article className={active===item.id?'active':''} key={item.id} onClick={()=>load(item)}>{item.images[0] ? <img src={item.images[0].dataUrl} alt=""/> : <div className="placeholder-art"><span>{item.title.slice(0,2).toUpperCase()}</span></div>}<div className="card-copy"><div><h3>{item.title}</h3><button onClick={e=>{e.stopPropagation();toggleFavorite(item.id)}}><Heart size={14} fill={item.favorite?'currentColor':'none'}/></button></div><p>{item.style} · {new Date(item.updatedAt).toLocaleDateString()}</p><div className="tags">{item.tags.slice(0,2).map(t=><em key={t}>{t}</em>)}</div></div><button className="delete" onClick={e=>{e.stopPropagation();remove(item.id)}}><Trash2 size={14}/></button></article>) : <div className="empty"><Archive size={24}/><p>No saved prompts yet.</p><small>Build a direction, then archive it here.</small></div>}</div>
+    </aside>
+    {toast && <div className="lime-toast show">{toast}</div>}
+  </main>
 }
-createRoot(document.getElementById('root')!).render(window.location.hash === '#destiny' ? <Destiny /> : <App />)
+
+function Root() {
+  const [tool, setTool] = useState(window.location.hash === '#destiny' ? 'destiny' : 'studio')
+  
+  useEffect(() => {
+    const handleHash = () => {
+      setTool(window.location.hash === '#destiny' ? 'destiny' : 'studio')
+    }
+    window.addEventListener('hashchange', handleHash)
+    return () => window.removeEventListener('hashchange', handleHash)
+  }, [])
+
+  return tool === 'destiny' ? (
+    <Destiny onBack={() => { window.location.hash = '' }} />
+  ) : (
+    <App onOpenDestiny={() => { window.location.hash = 'destiny' }} />
+  )
+}
+
+createRoot(document.getElementById('root')!).render(<Root />)

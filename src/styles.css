@@ -6,3 +6,143 @@
 /* Shared lime feedback + DESTINY prompt press */
 button,.destiny-link{transition:transform .14s ease,background .14s ease,color .14s ease,border-color .14s ease}button:hover,.destiny-link:hover{border-color:#111;background:#c8f53a;color:#111}button:active,.destiny-link:active{transform:translateY(1px)}.destiny-link,.randomize{border:1px solid #111;background:transparent;color:#111;padding:9px 12px;font:500 10px 'DM Mono';letter-spacing:.06em;text-decoration:none;display:flex;align-items:center;gap:7px}.randomize{height:38px;white-space:nowrap}.lime-toast{position:fixed;z-index:50;left:50%;bottom:22px;transform:translate(-50%,16px);background:#c8f53a;color:#111;border:1px solid #111;padding:10px 14px;font:500 10px 'DM Mono';letter-spacing:.08em;text-transform:uppercase;opacity:0;pointer-events:none;transition:.18s}.lime-toast.show{opacity:1;transform:translate(-50%,0)}
 .destiny-tool{min-height:100vh;background:#0b0b0c;color:#ede7da;font-family:'Space Grotesk',sans-serif}.destiny-header{height:69px;padding:0 4vw;border-bottom:1px solid #ffffff22;display:flex;align-items:center;justify-content:space-between}.destiny-header a{font:10px 'DM Mono';letter-spacing:.08em;color:#ede7da;text-decoration:none;display:flex;gap:7px;align-items:center}.destiny-header>div{text-align:center}.destiny-header b{font-size:21px;letter-spacing:-.06em}.destiny-header b span{color:#c8f53a}.destiny-header small,.destiny-header em{display:block;font:10px 'DM Mono';font-style:normal;letter-spacing:.1em;color:#a4a098}.destiny-main{max-width:1280px;margin:auto;padding:30px 4vw 70px;display:grid;grid-template-columns:350px minmax(0,1fr);gap:30px}.destiny-controls{padding:20px;border:1px solid #ffffff22;align-self:start}.destiny-controls>p{margin:0 0 4px;font:500 11px 'DM Mono';letter-spacing:.1em;color:#c8f53a}.destiny-controls>small{color:#aaa69e;display:block;line-height:1.5;margin-bottom:20px}.destiny-controls label{font:10px 'DM Mono';letter-spacing:.08em;color:#c5c0b8;margin-top:14px}.destiny-controls input,.destiny-controls select{margin-top:6px;background:#111;border-color:#ffffff33;color:#ede7da}.destiny-actions,.destiny-output-actions{display:flex;gap:8px;margin-top:20px}.destiny-actions button,.destiny-output-actions button{padding:10px 12px;border:1px solid #ffffff44;background:transparent;color:#ede7da;font:10px 'DM Mono';letter-spacing:.06em;display:flex;align-items:center;gap:6px}.destiny-actions button:hover,.destiny-output-actions button:hover{background:#c8f53a;color:#111;border-color:#c8f53a}.destiny-primary{background:#c8f53a!important;color:#111!important;border-color:#c8f53a!important}.destiny-stage{min-width:0}.destiny-poster{position:relative;min-height:430px;background:radial-gradient(#1113 1px,transparent 1.2px) 0 0/10px 10px,#ede7da;color:#0b0b0c;padding:35px;overflow:hidden}.destiny-poster>i{position:absolute;width:15px;height:15px;border:1px solid #111;border-radius:50%}.destiny-poster>i:nth-child(1){left:10px;top:10px}.destiny-poster>i:nth-child(2){right:10px;top:10px}.destiny-poster>i:nth-child(3){left:10px;bottom:10px}.destiny-poster>i:nth-child(4){right:10px;bottom:10px}.destiny-poster.empty{display:grid;place-items:center;text-align:center;font:12px 'DM Mono';color:#66615c}.destiny-meta{font:10px 'DM Mono';letter-spacing:.08em;color:#625e57;display:flex;justify-content:space-between;margin-bottom:26px}.destiny-poster>b{background:#111;color:#ede7da;padding:5px 8px;font:10px 'DM Mono';letter-spacing:.08em}.destiny-poster pre{white-space:pre-wrap;font:14px/1.7 'DM Mono';margin:22px 0}.destiny-poster footer{font:10px 'DM Mono';letter-spacing:.07em;color:#625e57;display:flex;justify-content:space-between}.destiny-history{margin-top:18px;border:1px solid #ffffff22;padding:13px}.destiny-history>span{display:block;margin-bottom:8px;font:10px 'DM Mono';letter-spacing:.1em;color:#a4a098}.destiny-history button{display:block;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;margin-top:5px;border:1px solid #ffffff1f;background:#ffffff08;color:#d9d4cb;padding:9px;font:10px 'DM Mono'}@media(max-width:760px){.destiny-header em{display:none}.destiny-main{grid-template-columns:1fr;padding:20px}.destiny-poster{padding:28px 24px;min-height:350px}.destiny-actions{flex-wrap:wrap}.destiny-header{padding:0 18px}.destiny-header b{font-size:18px}.destiny-link{font-size:8px;padding:8px}.randomize{justify-content:center}}
+
+/* Smooth transitions & Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+main, .destiny-tool {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+/* Aspect Ratio Picker */
+.ratio-picker-container {
+  grid-column: 1 / -1;
+  margin-top: 15px;
+}
+.ratio-picker-title {
+  font: 500 10px 'DM Mono', monospace;
+  letter-spacing: .08em;
+  color: #666660;
+  margin-bottom: 8px;
+  display: block;
+}
+.ratio-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  background: #f7f6f2;
+  border: 1px solid #b8b8b1;
+  padding: 12px;
+}
+.ratio-btn {
+  border: 1px solid transparent;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 4px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  color: #555;
+}
+.ratio-btn:hover {
+  background: #deded8;
+  color: #111;
+}
+.ratio-btn.selected {
+  background: #111;
+  color: #c8f53a;
+}
+.ratio-icon-wrap {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+.ratio-icon {
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+  transition: border-color 0.15s ease;
+}
+.ratio-label {
+  font: 600 10px 'DM Mono', monospace;
+  letter-spacing: -0.02em;
+}
+
+/* Destiny Header Primary Navigation Button */
+.destiny-nav {
+  border: 1px solid #c8f53a !important;
+  background: #c8f53a !important;
+  color: #111 !important;
+  padding: 8px 12px !important;
+  font: 500 10px 'DM Mono', monospace !important;
+  letter-spacing: .06em !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+}
+.destiny-nav:hover {
+  background: #fff !important;
+  color: #111 !important;
+  border-color: #fff !important;
+}
+
+/* Destiny Type Grid (Optional text fields) */
+.destiny-type-title {
+  margin-top: 24px;
+  font: 500 10px 'DM Mono', monospace;
+  letter-spacing: .08em;
+  color: #c8f53a;
+  border-bottom: 1px solid #ffffff22;
+  padding-bottom: 6px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+.destiny-type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.destiny-type-grid label {
+  margin-top: 0 !important;
+  display: flex;
+  flex-direction: column;
+}
+.destiny-type-grid label i {
+  font-size: 8px;
+  color: #a4a098;
+  font-style: normal;
+  margin-left: 4px;
+  font-family: 'DM Mono', monospace;
+}
+.destiny-type-grid input {
+  padding: 8px !important;
+}
+
+/* Destiny Actions */
+.destiny-actions button.destiny-clear {
+  border: 1px solid #ffffff44;
+  background: transparent;
+  color: #ede7da;
+}
+.destiny-actions button.destiny-clear:hover {
+  background: #ff4a4a !important;
+  color: #fff !important;
+  border-color: #ff4a4a !important;
+}
+
+/* Mobile responsive modifications */
+@media(max-width:720px) {
+  .ratio-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .destiny-type-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

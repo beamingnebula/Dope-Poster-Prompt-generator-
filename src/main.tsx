@@ -40,7 +40,10 @@ const today = () => new Date().toISOString()
 function readStore(): Store { try { const raw = localStorage.getItem('prompt-studio/v1'); return raw ? JSON.parse(raw) : { prompts: [], collections: ['All work', 'Editorial', 'Experiments', 'Posters'] } } catch { return { prompts: [], collections: ['All work'] } } }
 
 function promptFor(subject: string, style: string, text: string[], palette: string, materials: string[], texture: string, layout: string, ratio: string) {
-  const copy = text.filter(Boolean).map((t, i) => `Text ${i + 1}: “${t}”`).join('; ') || 'Use invented editorial microcopy only.'
+  const hasText = text.some(t => t.trim() !== '')
+  const copyInstruction = hasText 
+    ? `Typography is an object in the composition, not an overlay: oversized condensed sans-serif letterforms, precise metadata, cropped type, barcode-like marks and calibrated hierarchy. Only include the following provided text: ${text.filter(Boolean).map((t, i) => `Text ${i + 1}: “${t}”`).join('; ')}. Do not generate any other text, letters, words, or microcopy.`
+    : `Do not add any text, typography, labels, letters, words, or microcopy in the image; the layout must remain entirely clean and clear of any textual elements.`
   const materialLine = materials.length ? materials.join(', ').toLowerCase() : 'matte paper, anodized aluminum and smoked glass'
   const isVertical = ratio.split(':').map(Number)[0] < ratio.split(':').map(Number)[1]
   const orientation = ratio === '1:1' ? 'square' : (isVertical ? 'vertical' : 'horizontal')
@@ -49,7 +52,7 @@ function promptFor(subject: string, style: string, text: string[], palette: stri
     ? `The primary subject is ${subject.trim()}: make it the monumental hero form of the composition, physically real, tactile, sharply lit, and carefully isolated, ensuring it is central to the visual narrative and unmistakably visible.` 
     : `The composition is designed for an unnamed visual concept.`
 
-  return `A ${orientation} ${style.toLowerCase()} poster in a ${ratio} aspect ratio, built as a highly art-directed print artifact. ${subjectPhrase} Build this on a ${layout.toLowerCase()} layout, with a single decisive focal point, intentional asymmetry, large controlled negative space and a strict invisible grid.\n\nMaterial language: ${materialLine}. Palette: ${palette}, with disciplined color restraint and one active accent only. Add ${texture.toLowerCase()}, tactile paper fibers, subtle print registration shifts and quiet technical diagram details; imperfections must look physically produced.\n\nTypography is an object in the composition, not an overlay: oversized condensed sans-serif letterforms, precise metadata, cropped type, barcode-like marks and calibrated hierarchy. ${copy}\n\nLighting: precise product-photography contrast, deep graphite shadows, soft directional highlights. Mood: museum-grade underground culture, industrial poetry, deliberate and intelligent. Avoid generic AI aesthetics, random decoration, illegible walls of text, gradients, stock imagery and visual clutter. ${ratio} ${orientation} format, premium editorial graphic design.`
+  return `A ${orientation} ${style.toLowerCase()} poster in a ${ratio} aspect ratio, built as a highly art-directed print artifact. ${subjectPhrase} Build this on a ${layout.toLowerCase()} layout, with a single decisive focal point, intentional asymmetry, large controlled negative space and a strict invisible grid.\n\nMaterial language: ${materialLine}. Palette: ${palette}, with disciplined color restraint and one active accent only. Add ${texture.toLowerCase()}, tactile paper fibers, subtle print registration shifts and quiet technical diagram details; imperfections must look physically produced.\n\n${copyInstruction}\n\nLighting: precise product-photography contrast, deep graphite shadows, soft directional highlights. Mood: museum-grade underground culture, industrial poetry, deliberate and intelligent. Avoid generic AI aesthetics, random decoration, illegible walls of text, gradients, stock imagery and visual clutter. ${ratio} ${orientation} format, premium editorial graphic design.`
 }
 
 type AppProps = {

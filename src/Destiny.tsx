@@ -21,11 +21,14 @@ export default function Destiny({ onBack }: Props) {
     const choice = random ? Math.floor(Math.random() * styles.length) : style; const selected = styles[choice]; const actualSubject = suppliedSubject || subject.trim() || pick(fallback); const actualFormat = random || format === 'Surprise me' ? pick(formats.slice(1)) : format; const actualRatio = ratio === 'Surprise me' ? pick(ratios.slice(1)) : ratio; const words = suppliedCopy || copy
     
     // Restore and merge structural headline features
+    const hasText = words.some(w => w.trim() !== '');
     const headline = words[0]?.trim();
     const subtexts = words.slice(1).map((value, index) => value.trim() ? `Text ${index + 2}: “${value.trim()}”` : '').filter(Boolean).join('; ');
-    const typeInstruction = headline 
-      ? `Typography: “${headline}” is the structural headline, oversized, cropped and physically integrated with the subject. ${subtexts ? `Supporting microcopy is integrated into the grid: ${subtexts}.` : 'Add only restrained supporting microcopy for other details.'}`
-      : (words.filter(Boolean).length ? `Typography is structural and physically integrated with the subject; ${words.map((value, index) => value.trim() ? `Text ${index + 1}: “${value.trim()}”` : '').filter(Boolean).join('; ')}.` : 'Use invented editorial microcopy only.');
+    const typeInstruction = hasText 
+      ? (headline 
+          ? `Typography: “${headline}” is the structural headline, oversized, cropped and physically integrated with the subject. Only include the following provided supporting microcopy: ${subtexts || 'none'}. Do not generate any other text, lettering, or microcopy.`
+          : `Typography is structural and physically integrated with the subject. Only include the following provided text: ${words.map((value, index) => value.trim() ? `Text ${index + 1}: “${value.trim()}”` : '').filter(Boolean).join('; ')}. Do not generate any other text, lettering, or microcopy.`)
+      : `Do not add any text, typography, labels, letters, words, or microcopy in the image; the layout must remain entirely clean and clear of any textual elements.`;
 
     const result = `${actualFormat} in a ${actualRatio} aspect ratio — ${selected[0]}. The primary subject is ${actualSubject}: make it unmistakably visible, central to the visual narrative, physically believable and clearly described in the image—not merely symbolic, incidental, abstracted away or hidden. Use ${selected[1]}. Build ${selected[2]}. ${typeInstruction} Use only restrained microcopy for any empty fields. Composition has a single decisive focal point, controlled negative space and an intentional grid tailored to ${actualRatio}. Use a limited palette with one acidic accent, tactile print imperfections and deliberate material detail. Quietly intelligent underground culture, premium graphic design, no generic AI gloss, no random clutter.`
     
